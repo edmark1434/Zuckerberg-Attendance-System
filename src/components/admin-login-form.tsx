@@ -15,23 +15,23 @@ import {
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 
-interface TeacherLoginFormProps extends Omit<React.ComponentProps<"div">, "onSubmit"> {
-  onSubmit?: (data: { teacherId: string; password: string }) => void
+interface AdminLoginFormProp extends Omit<React.ComponentProps<"div">, "onSubmit"> {
+  onSubmit?: (data: { email: string; password: string }) => void
 }
 
-export default function TeacherLoginForm({
+export default function AdminLoginForm({
   className,
   onSubmit,
   ...props
-}: TeacherLoginFormProps) {
-  const [teacherId, setTeacherId] = useState("")
+}: AdminLoginFormProp) {
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if (!teacherId || !password) {
+    if (!email || !password) {
       // Add your validation logic here
       return
     }
@@ -41,10 +41,10 @@ export default function TeacherLoginForm({
     try {
       // Call the parent onSubmit handler if provided
       if (onSubmit) {
-        await onSubmit({ teacherId, password })
+        await onSubmit({ email, password })
       } else {
         // Default submission logic - replace with your actual API call
-        console.log("Login attempt with:", { teacherId, password })
+        console.log("Login attempt with:", { email, password })
         // Example API call:
         // const response = await fetch("/api/auth/login", {
         //   method: "POST",
@@ -96,8 +96,8 @@ export default function TeacherLoginForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
-                  value={teacherId}
-                  onChange={(e) => setTeacherId(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
                 />

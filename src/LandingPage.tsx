@@ -87,6 +87,8 @@ const staggerContainer = {
 };
 
 const LandingPage = () => {
+  console.log(import.meta.env.VITE_SUPABASE_URL);
+console.log(import.meta.env.VITE_SUPABASE_ANON_KEY);
   return (
     <div className="bg-white text-black scroll-smooth">
       {/* ================= NAVBAR ================= */}

@@ -1,0 +1,9 @@
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
+import { mockSessionRecords, mockTeacherSessions } from "@/mock/teacher-attendance"
+import { createMockAttendanceSession } from "@/services/mock-attendance-session.service"
+import type { SessionAttendanceRecord, TeacherAttendanceSession } from "@/types/teacher-attendance"
+
+interface TeacherAttendanceState { sessions: TeacherAttendanceSession[]; records: SessionAttendanceRecord[]; create: (input: Omit<TeacherAttendanceSession, "id" | "qrValue">) => TeacherAttendanceSession; start: (id: string) => void; end: (id: string) => void; remove: (id: string) => void }
+const TeacherAttendanceContext = createContext<TeacherAttendanceState | undefined>(undefined)
+export function TeacherAttendanceProvider({ children }: { children: ReactNode }) { const [sessions, setSessions] = useState(mockTeacherSessions); const [records] = useState(mockSessionRecords); const value = useMemo<TeacherAttendanceState>(() => ({ sessions, records, create: (input) => { const session = createMockAttendanceSession(input, sessions); setSessions((current) => [session, ...current]); return session }, start: (id) => setSessions((current) => current.map((session) => session.id === id ? { ...session, status: "Active" } : session)), end: (id) => setSessions((current) => current.map((session) => session.id === id ? { ...session, status: "Ended" } : session)), remove: (id) => setSessions((current) => current.filter((session) => session.id !== id)) }), [sessions, records]); return <TeacherAttendanceContext.Provider value={value}>{children}</TeacherAttendanceContext.Provider> }
+export function useTeacherAttendance() { const context = useContext(TeacherAttendanceContext); if (!context) throw new Error("useTeacherAttendance must be used within TeacherAttendanceProvider"); return context }

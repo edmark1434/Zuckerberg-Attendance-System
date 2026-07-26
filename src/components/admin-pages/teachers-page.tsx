@@ -1,0 +1,21 @@
+import { useMemo, useState } from "react"
+import { MoreHorizontalIcon, PlusIcon } from "lucide-react"
+import { toast } from "sonner"
+import { mockTeachers } from "@/mock/teachers"
+import { useMockCollection } from "@/hooks/use-mock-collection"
+import { fullName, type Teacher } from "@/types/attendance"
+import { AvatarCell, EmptyState, PageHeader, Pagination, SearchInput, StatusBadge } from "@/components/admin-ui"
+import { ConfirmDialog } from "@/components/confirm-dialog"
+import { TeacherDialog } from "@/components/entity-dialogs"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+const PAGE_SIZE = 8
+export function TeacherAccountsPage() {
+  const collection = useMockCollection(mockTeachers); const [search, setSearch] = useState(""); const [page, setPage] = useState(1); const [dialog, setDialog] = useState<"create" | "edit" | undefined>(); const [selected, setSelected] = useState<Teacher>(); const [deleting, setDeleting] = useState<Teacher>()
+  const filtered = useMemo(() => collection.records.filter((teacher) => `${fullName(teacher)} ${teacher.email} ${teacher.department}`.toLowerCase().includes(search.toLowerCase())), [collection.records, search]); const pages = Math.ceil(filtered.length / PAGE_SIZE); const records = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const save = (input: Omit<Teacher, "id">) => { if (dialog === "edit" && selected) { collection.update({ ...selected, ...input }); toast.success("Teacher account updated") } else { collection.create({ ...input, id: crypto.randomUUID() }); toast.success("Teacher account created") }; setDialog(undefined); setSelected(undefined) }
+  return <div className="space-y-6"><PageHeader title="Teachers" description="Manage faculty accounts and teaching profiles." action={<Button onClick={() => { setSelected(undefined); setDialog("create") }}><PlusIcon /> Add teacher</Button>} /><Card className="shadow-none"><CardContent className="p-0"><div className="border-b p-4"><SearchInput value={search} onChange={(value) => { setSearch(value); setPage(1) }} placeholder="Search teachers" /></div><div className="overflow-x-auto">{records.length ? <Table><TableHeader><TableRow><TableHead>Teacher</TableHead><TableHead className="hidden md:table-cell">Email</TableHead><TableHead>Department</TableHead><TableHead>Status</TableHead><TableHead className="w-12" /></TableRow></TableHeader><TableBody>{records.map((teacher) => <TableRow key={teacher.id}><TableCell><AvatarCell name={fullName(teacher)} /></TableCell><TableCell className="hidden text-muted-foreground md:table-cell">{teacher.email}</TableCell><TableCell>{teacher.department}</TableCell><TableCell><StatusBadge status={teacher.status} /></TableCell><TableCell><DropdownMenu><DropdownMenuTrigger render={<Button size="icon" variant="ghost" aria-label={`Actions for ${fullName(teacher)}`} />}><MoreHorizontalIcon /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => { setSelected(teacher); setDialog("edit") }}>Edit teacher</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem variant="destructive" onClick={() => setDeleting(teacher)}>Delete teacher</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>)}</TableBody></Table> : <EmptyState title="No teachers found" description="Try another search term or add a new faculty account." />}</div>{records.length > 0 && <div className="p-4"><Pagination page={page} total={pages} onPageChange={setPage} /></div>}</CardContent></Card><TeacherDialog open={dialog === "create" || dialog === "edit"} onOpenChange={(open) => !open && setDialog(undefined)} teacher={dialog === "edit" ? selected : undefined} onSave={save} /><ConfirmDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(undefined)} title="Delete teacher?" description={`This will remove ${deleting ? fullName(deleting) : "this teacher"} from the mock directory.`} onConfirm={() => { if (deleting) { collection.remove(deleting.id); setDeleting(undefined); toast.success("Teacher removed") } }} /></div>
+}
