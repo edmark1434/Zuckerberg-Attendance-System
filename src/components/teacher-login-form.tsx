@@ -14,52 +14,82 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
+import { toast } from "sonner"
 
 interface TeacherLoginFormProps extends Omit<React.ComponentProps<"div">, "onSubmit"> {
-  onSubmit?: (data: { teacherId: string; password: string }) => void
+  onSubmit?: (data: { teacherId: string; password: string }) => Promise<void>
+  isLoading?: boolean
 }
 
 export default function TeacherLoginForm({
   className,
   onSubmit,
+  isLoading: externalLoading,
   ...props
 }: TeacherLoginFormProps) {
   const [teacherId, setTeacherId] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [internalLoading, setInternalLoading] = useState(false)
+  const [errors, setErrors] = useState<{ teacherId?: string; password?: string }>({})
+
+  const isLoading = externalLoading !== undefined ? externalLoading : internalLoading
+
+  const validate = (): boolean => {
+    const newErrors: { teacherId?: string; password?: string } = {}
+
+    if (!teacherId.trim()) {
+      newErrors.teacherId = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(teacherId)) {
+      newErrors.teacherId = "Please enter a valid email address"
+    }
+
+    if (!password) {
+      newErrors.password = "Password is required"
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    if (!teacherId || !password) {
-      // Add your validation logic here
+    // Clear previous errors
+    setErrors({})
+
+    // Validate form
+    if (!validate()) {
+      toast.error("Please fix the errors before continuing")
       return
     }
 
-    setIsLoading(true)
-    
-    try {
-      // Call the parent onSubmit handler if provided
-      if (onSubmit) {
-        await onSubmit({ teacherId, password })
-      } else {
-        // Default submission logic - replace with your actual API call
-        console.log("Login attempt with:", { teacherId, password })
-        // Example API call:
-        // const response = await fetch("/api/auth/login", {
-        //   method: "POST",
-        //   headers: { "Content-Type": "application/json" },
-        //   body: JSON.stringify({ email, password }),
-        // })
-        // const data = await response.json()
-        // Handle response...
-      }
-    } catch (error) {
-      console.error("Login error:", error)
-      // Handle error state here
-    } finally {
-      setIsLoading(false)
+    if (!onSubmit) {
+      toast.error("Login handler not configured")
+      return
     }
+
+    // Set loading state
+    if (externalLoading === undefined) {
+      setInternalLoading(true)
+    }
+
+    try {
+      await onSubmit({ teacherId, password })
+      // Success is handled by parent component
+    } catch (error: any) {
+      console.error("Login error:", error)
+      // Error is already handled by parent, but we catch to reset loading
+    } finally {
+      if (externalLoading === undefined) {
+        setInternalLoading(false)
+      }
+    }
+  }
+
+  const clearError = (field: "teacherId" | "password") => {
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
   }
 
   return (
@@ -88,26 +118,41 @@ export default function TeacherLoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="teacher@school.edu"
                   value={teacherId}
-                  onChange={(e) => setTeacherId(e.target.value)}
+                  onChange={(e) => {
+                    setTeacherId(e.target.value)
+                    if (errors.teacherId) clearError("teacherId")
+                  }}
                   required
                   disabled={isLoading}
+                  aria-invalid={!!errors.teacherId}
+                  className={errors.teacherId ? "border-destructive" : ""}
                 />
+                {errors.teacherId && (
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.teacherId}
+                  </p>
+                )}
               </Field>
+
               <Field>
                 <div className="flex items-center justify-between">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <a
                     href="#"
                     className="text-sm text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      toast.info("Password reset link will be sent to your email")
+                    }}
                   >
                     Forgot password?
                   </a>
@@ -115,22 +160,54 @@ export default function TeacherLoginForm({
                 <Input
                   id="password"
                   type="password"
+                  placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (errors.password) clearError("password")
+                  }}
                   required
                   disabled={isLoading}
+                  aria-invalid={!!errors.password}
+                  className={errors.password ? "border-destructive" : ""}
                 />
+                {errors.password && (
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.password}
+                  </p>
+                )}
               </Field>
+
               <Field className="space-y-3">
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Logging in..." : "Login"}
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Logging in...
+                    </>
+                  ) : (
+                    "Login"
+                  )}
                 </Button>
+
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
                   </div>
-
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Teacher Portal
+                    </span>
+                  </div>
                 </div>
+
+                <p className="text-center text-xs text-muted-foreground">
+                  By continuing, you agree to our Terms of Service and Privacy Policy.
+                </p>
               </Field>
             </FieldGroup>
           </form>

@@ -6,24 +6,28 @@ export interface Student {
   studentNumber: string
   firstName: string
   lastName: string
-  email: string
-  yearLevel: string
+  middleName?: string
+  suffix?: string
   sectionId?: string
   status: AccountStatus
-  birthdate?: string
+  birthdate: string | Date
   password?: string
   passwordResetAt?: string
+  createdAt?: string
+  gender?: "Male" | "Female"
 }
 
 export interface Teacher {
   id: string
   firstName: string
   lastName: string
+  middleName?: string
   email: string
-  department: string
   status: AccountStatus
-  password?: string
+  password: string
+  current_password?: string
   passwordResetAt?: string
+  accountId?: string
 }
 
 export interface Section {
@@ -31,7 +35,6 @@ export interface Section {
   code: string
   name: string
   yearLevel: string
-  schedule: string
   academicYearId: string
   teacherId?: string
   studentIds: string[]
@@ -43,6 +46,7 @@ export interface AcademicYear {
   startDate: string
   endDate: string
   status: AccountStatus
+  createdAt: string
 }
 
 export interface AttendanceSession {
@@ -50,6 +54,7 @@ export interface AttendanceSession {
   sectionId: string
   date: string
   startedAt: string
+  createdAt: string
   status: "Open" | "Completed"
   present: number
   late: number
@@ -62,6 +67,7 @@ export interface AttendanceRecord {
   studentId: string
   status: AttendanceStatus
   time?: string
+  createdAt: string
 }
 
 export const fullName = (person: Pick<Student | Teacher, "firstName" | "lastName">) =>

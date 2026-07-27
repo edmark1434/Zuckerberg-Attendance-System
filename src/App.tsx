@@ -17,9 +17,9 @@ import {
 import {
   AttendanceManagementPage,
   QRScannerPage,
-  StudentListPage,
-  TeacherHomePage,
+  StudentListPage
 } from "@/components/teacher-section.tsx"
+
 
 // Admin components
 import {
@@ -32,6 +32,9 @@ import {
   AcademicYearsPage,
   AttendanceReportsPage,
 } from "@/components/admin-section.tsx"
+
+import QrPageScanner from './components/teacher-pages/QrPageScanner.tsx'
+import TeacherHomePage from './components/teacher-pages/TeacherHomePage.tsx'
 
 function App() {
   return (
@@ -51,7 +54,7 @@ function App() {
       <Route element={<TeacherDashboard />}>
         <Route path="/teacher/dashboard" element={<TeacherHomePage />} />
         <Route path="/teacher/attendance" element={<AttendanceManagementPage />} />
-        <Route path="/teacher/attendance/scanner" element={<QRScannerPage />} />
+        <Route path="/teacher/attendance/scanner" element={<QrPageScanner />} />
         <Route path="/teacher/students" element={<StudentListPage />} />
       </Route>
       
